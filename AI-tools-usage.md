@@ -28,7 +28,9 @@ reviewed, adapted, and in places rewritten by hand before being accepted.
    - **deriving** `status` instead of storing it, after I flagged the cascading warning;
    - **co-locating** module constants vs. a global constants file;
    - dropping **SWR** once I established it doesn't actually cancel requests;
-   - extracting a **headless `useCombobox` hook** to separate behaviour from data and markup.
+   - extracting a **headless `useCombobox` hook** to separate behaviour from data and markup;
+   - extracting a generic **`useFetch<T>` hook** (url in, `{ data, error, isLoading, refetch }` out);
+   - **virtualizing** the results list after removing the result cap.
 
 Every non-trivial line is understood and defensible — nothing was accepted without
 knowing why it's there.
@@ -67,9 +69,15 @@ knowing why it's there.
 
 ## Key design decisions
 
-- **Handling "hundreds of results" at the source:** the API request uses `limit=8` and
-  `select=title,price,thumbnail,brand,category`, so the dropdown never fetches or renders
-  a huge list. The true match count is surfaced as "Showing 8 of N results".
+- **Handling "hundreds of results":** the request fetches the full match set (`limit=0`, with
+  a trimmed `select` payload) and the dropdown is **virtualized** with `@tanstack/react-virtual`,
+  so only the ~12 visible rows are ever in the DOM regardless of the total. (A simpler,
+  equally defensible alternative is capping the request — e.g. `limit=8` with a "showing N of
+  total" footer; virtualization was chosen to render the whole set with no DOM/perf cost.)
+- **Generic data layer:** fetch + abort + race-safety + keep-previous-data live in a reusable
+  `useFetch<T>(url)` hook; `useProductSearch` only builds the URL and maps the response to the
+  domain status. Passing `url = null` is the idle signal (no request).
+
 - **Request control:** 300ms debounce collapses typing bursts into one request; an
   `AbortController` cancels the previous in-flight request on each new query, eliminating
   the stale-response race condition.

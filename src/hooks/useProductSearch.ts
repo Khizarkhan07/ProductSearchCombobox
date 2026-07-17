@@ -8,12 +8,14 @@ const SEARCH_URL = 'https://dummyjson.com/products/search'
 const SELECT_FIELDS = 'title,price,thumbnail,brand,category'
 const DEBOUNCE_MS = 300
 const MIN_QUERY_LENGTH = 1
-const RESULT_LIMIT = 8
+// DummyJSON returns *all* matches when limit=0. We render the full set with a
+// virtualized list, so only the visible rows are ever in the DOM.
+const FETCH_LIMIT = 0
 
 function buildSearchUrl(query: string): string {
   const url = new URL(SEARCH_URL)
   url.searchParams.set('q', query)
-  url.searchParams.set('limit', String(RESULT_LIMIT))
+  url.searchParams.set('limit', String(FETCH_LIMIT))
   url.searchParams.set('select', SELECT_FIELDS)
   return url.toString()
 }

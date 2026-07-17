@@ -60,13 +60,8 @@ export function SearchBar({ onProductSelect }: SearchBarProps) {
     return () => document.removeEventListener('pointerdown', onPointerDown)
   }, [isOpen, close])
 
-  // Keep the keyboard-highlighted option scrolled into view.
-  useEffect(() => {
-    if (activeIndex < 0) return
-    document
-      .getElementById(getOptionId(activeIndex))
-      ?.scrollIntoView({ block: 'nearest' })
-  }, [activeIndex, getOptionId])
+  // (Scrolling the active option into view now lives in SearchResults, which
+  // owns the virtualizer — a virtualized row may not be in the DOM to query.)
 
   const liveMessage =
     status === 'success'

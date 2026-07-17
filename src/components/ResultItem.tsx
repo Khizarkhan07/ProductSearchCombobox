@@ -1,3 +1,4 @@
+import type { CSSProperties } from 'react'
 import type { Product } from '../types/product'
 
 interface ResultItemProps {
@@ -5,6 +6,12 @@ interface ResultItemProps {
   /** DOM id so the input's aria-activedescendant can reference the active row. */
   id: string
   isActive: boolean
+  /** 1-based position and total size — so a screen reader can announce "N of M"
+   *  even though the virtualized list only keeps a slice of options in the DOM. */
+  posInSet: number
+  setSize: number
+  /** Absolute positioning from the virtualizer (transform / top). */
+  style: CSSProperties
   onSelect: (product: Product) => void
   onHover: () => void
 }
@@ -19,14 +26,20 @@ export function ResultItem({
   product,
   id,
   isActive,
+  posInSet,
+  setSize,
+  style,
   onSelect,
   onHover,
 }: ResultItemProps) {
   return (
-    <li
+    <div
       id={id}
       role="option"
       aria-selected={isActive}
+      aria-setsize={setSize}
+      aria-posinset={posInSet}
+      style={style}
       // mousemove (not mouseenter) so a keyboard-driven scroll moving a row under
       // a stationary cursor can't hijack the active option. The guard avoids
       // firing setState on every pixel of real movement.
@@ -50,7 +63,6 @@ export function ResultItem({
         width={40}
         height={40}
         className="size-10 shrink-0 rounded-md bg-white object-contain dark:bg-gray-800"
-        // onError={} for 404 images
       />
 
       {/* min-w-0 lets the truncate below actually clip inside the flex row. */}
@@ -66,6 +78,6 @@ export function ResultItem({
       <span className="shrink-0 text-sm font-semibold text-gray-900 dark:text-gray-100">
         {priceFormatter.format(product.price)}
       </span>
-    </li>
+    </div>
   )
 }
