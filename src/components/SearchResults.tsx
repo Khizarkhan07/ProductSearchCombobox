@@ -10,6 +10,8 @@ interface SearchResultsProps {
   total: number
   error: string | null
   query: string
+  /** Number of grid columns — must match the value given to useCombobox. */
+  columns: number
   /** id of the listbox, referenced by the input's aria-controls. */
   listboxId: string
   /** Builds the id for option N — shared with the input's aria-activedescendant. */
@@ -43,6 +45,7 @@ function Spinner() {
 
 interface ResultsListProps {
   products: Product[]
+  columns: number
   listboxId: string
   getOptionId: (index: number) => string
   activeIndex: number
@@ -52,12 +55,14 @@ interface ResultsListProps {
 }
 
 /**
- * The virtualized listbox. Only the rows in (and near) the viewport are in the
- * DOM; a full-height sizer keeps the scrollbar honest. Lives in its own
- * component so the virtualizer's hooks run only when results actually render.
+ * The virtualized listbox. We virtualize grid *rows* (each holding up to
+ * `columns` items), so only the rows in (and near) the viewport are in the DOM;
+ * a full-height sizer keeps the scrollbar honest. Lives in its own component so
+ * the virtualizer's hooks run only when results actually render.
  */
 function ResultsList({
   products,
+  columns,
   listboxId,
   getOptionId,
   activeIndex,
@@ -67,21 +72,24 @@ function ResultsList({
 }: ResultsListProps) {
   const scrollRef = useRef<HTMLDivElement>(null)
 
+  const rowCount = Math.ceil(products.length / columns)
+
   const virtualizer = useVirtualizer({
-    count: products.length,
+    count: rowCount,
     getScrollElement: () => scrollRef.current,
     estimateSize: () => ROW_HEIGHT,
     overscan: 6,
   })
 
-  // Keep the keyboard-highlighted option in view. With virtualization the active
-  // row may not be in the DOM, so we use the virtualizer's API — not
-  // getElementById().scrollIntoView() — to bring it into the window.
+  // Keep the active option in view. activeIndex is a linear item index, so map
+  // it to its grid row before scrolling (the virtualizer counts rows, not items).
   useEffect(() => {
     if (activeIndex >= 0) {
-      virtualizer.scrollToIndex(activeIndex, { align: 'auto' })
+      virtualizer.scrollToIndex(Math.floor(activeIndex / columns), {
+        align: 'auto',
+      })
     }
-  }, [activeIndex, virtualizer])
+  }, [activeIndex, columns, virtualizer])
 
   return (
     <div
@@ -92,33 +100,46 @@ function ResultsList({
       aria-busy={isBusy}
       className="max-h-80 overflow-y-auto"
     >
-      {/* Full-height sizer for the scrollbar. role=presentation keeps the
-          listbox→option relationship intact despite the wrapper element. */}
+      {/* Full-height sizer for the scrollbar. role=presentation on the wrappers
+          keeps the listbox→option relationship intact despite the nesting. */}
       <div
         role="presentation"
         style={{ height: virtualizer.getTotalSize(), position: 'relative' }}
       >
-        {virtualizer.getVirtualItems().map((row) => {
-          const product = products[row.index]
+        {virtualizer.getVirtualItems().map((virtualRow) => {
+          const start = virtualRow.index * columns
+          const rowItems = products.slice(start, start + columns)
           return (
-            <ResultItem
-              key={product.id}
-              product={product}
-              id={getOptionId(row.index)}
-              isActive={row.index === activeIndex}
-              posInSet={row.index + 1}
-              setSize={products.length}
-              onSelect={onSelect}
-              onHover={() => onHover(row.index)}
+            <div
+              key={virtualRow.index}
+              role="presentation"
+              className="flex"
               style={{
                 position: 'absolute',
                 top: 0,
                 left: 0,
                 width: '100%',
-                height: row.size,
-                transform: `translateY(${row.start}px)`,
+                height: virtualRow.size,
+                transform: `translateY(${virtualRow.start}px)`,
               }}
-            />
+            >
+              {rowItems.map((product, col) => {
+                const index = start + col
+                return (
+                  <ResultItem
+                    key={product.id}
+                    product={product}
+                    id={getOptionId(index)}
+                    isActive={index === activeIndex}
+                    posInSet={index + 1}
+                    setSize={products.length}
+                    onSelect={onSelect}
+                    onHover={() => onHover(index)}
+                    style={{ width: `${100 / columns}%` }}
+                  />
+                )
+              })}
+            </div>
           )
         })}
       </div>
@@ -132,6 +153,7 @@ export function SearchResults({
   total,
   error,
   query,
+  columns,
   listboxId,
   getOptionId,
   activeIndex,
@@ -187,6 +209,7 @@ export function SearchResults({
     <Panel>
       <ResultsList
         products={products}
+        columns={columns}
         listboxId={listboxId}
         getOptionId={getOptionId}
         activeIndex={activeIndex}

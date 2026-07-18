@@ -8,6 +8,10 @@ interface SearchBarProps {
   onProductSelect?: (product: Product) => void
 }
 
+// Grid columns in the results dropdown. Shared by the keyboard model
+// (useCombobox) and the layout (SearchResults) so they stay in agreement.
+const COLUMNS = 2
+
 export function SearchBar({ onProductSelect }: SearchBarProps) {
   const [query, setQuery] = useState('')
   const { status, products, total, error, retry } = useProductSearch(query)
@@ -38,6 +42,7 @@ export function SearchBar({ onProductSelect }: SearchBarProps) {
   const { isOpen, activeIndex, open, close, setActiveIndex, handleKeyDown } =
     useCombobox({
       itemCount: navigableCount,
+      columns: COLUMNS,
       onSelect: (index) => handleSelect(products[index]),
     })
 
@@ -146,6 +151,7 @@ export function SearchBar({ onProductSelect }: SearchBarProps) {
           total={total}
           error={error}
           query={query}
+          columns={COLUMNS}
           listboxId={listboxId}
           getOptionId={getOptionId}
           activeIndex={activeIndex}

@@ -30,7 +30,10 @@ reviewed, adapted, and in places rewritten by hand before being accepted.
    - dropping **SWR** once I established it doesn't actually cancel requests;
    - extracting a **headless `useCombobox` hook** to separate behaviour from data and markup;
    - extracting a generic **`useFetch<T>` hook** (url in, `{ data, error, isLoading, refetch }` out);
-   - **virtualizing** the results list after removing the result cap.
+   - **virtualizing** the results list after removing the result cap;
+   - the 2-column grid keyboard math — the **`nextGridIndex`** next-index calculation
+     (row-major traversal, clamping, and the odd-last-row guard) — was worked out with
+     Claude, then reviewed and verified by me against the edge cases.
 
 Every non-trivial line is understood and defensible — nothing was accepted without
 knowing why it's there.
