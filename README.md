@@ -1,5 +1,7 @@
 # Product Search
 
+**Live demo:** <https://product-search-combobox.vercel.app/>
+
 An accessible, production-minded **product search** component built in React +
 TypeScript. Type a query and get a live dropdown of matching products, backed by
 the [DummyJSON](https://dummyjson.com) search API.
